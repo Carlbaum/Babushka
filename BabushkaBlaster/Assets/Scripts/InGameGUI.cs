@@ -41,44 +41,37 @@ public class GUI_InGame : MonoBehaviour {
   private float vSValue = 0.0F;
   private int cont = 0;
 
-  void Awake() 
-  {
+  void Awake() {
 
   }
 
-  void Start()
-  {
+  void Start() {
     //placementGrid = GameObject.Find("placementGrid").collider;
     //TempTowers = new GameObject[];
 
   }
 
   // Update is called once per frame
-  void Update() 
-  {
-    if (Input.GetKeyDown(KeyCode.Space))
-    {
+  void Update() {
+    if (Input.GetKeyDown(KeyCode.Space)) {
       cont++;
     }
 
-    if(Input.GetMouseButtonDown(0)) 
-    {
+    if (Input.GetMouseButtonDown(0)) {
 
       Debug.Log("Pressed left click.");
     }
 
-    if(Input.GetMouseButtonDown(1))
-      Debug.Log("Pressed right click.");
-    if(Input.GetMouseButtonDown(2))
-      Debug.Log("Pressed middle click.");
+    if (Input.GetMouseButtonDown(1)) { Debug.Log("Pressed right click.");  }
+    if (Input.GetMouseButtonDown(2)) { Debug.Log("Pressed middle click."); }
 
-    if(Input.GetKeyUp(KeyCode.B))
-    {
-      if(buildMode)
-        buildMode = false;
-
-      else if(!buildMode)
-        buildMode = true;
+    if(Input.GetKeyUp(KeyCode.B)) {
+      buildMode = buildMode ? false : true;
+//      if (buildMode) { 
+//        buildMode = false; 
+//      } else if (!buildMode) {
+//        buildMode = true;
+//      }
     }
 
 
@@ -95,8 +88,7 @@ public class GUI_InGame : MonoBehaviour {
                 Instantiate(particle, transform.position, transform.rotation);// as GameObject;
     }*/
 
-    if(Input.GetKeyDown("escape"))
-    {
+    if(Input.GetKeyDown("escape")) {
       Time.timeScale = 0;
       guiMode = "Paused";
     }
@@ -132,54 +124,41 @@ public class GUI_InGame : MonoBehaviour {
 
                     toolbarInt = GUI.Toolbar(new Rect(25, 25, 250, 30), toolbarInt, toolbarStrings);
     */
-    if(guiMode == "InGame") 
-    {
+    if(guiMode == "InGame") {
       Health = GUI.TextField(new Rect(5,5,100,40),"Lives left: " + PlayerHealth);
       Score = GUI.TextField(new Rect(Screen.width -105, 5,100,40),"Score: " + killScore);
       GUI.Label(new Rect(Screen.width - 105, Screen.height - 20, 200, 30),"Money: " + cash);
 
-      if(buildMode == false) 
-      {
+      if(buildMode == false) {
         foreach(Transform PlacementTile in placementGrid)
           PlacementTile.gameObject.GetComponent<Renderer>().enabled = false;
 
-        if (GUI.Button (new Rect (5,Screen.height-45,40,40), "build")) 
-        {
+        if (GUI.Button (new Rect (5,Screen.height-45,40,40), "build")) {
           print ("Choose tower");
           buildMode = true;
         }
-      } 
-
-      else if(buildMode == true) 
-      {
+      } else if(buildMode == true) {
         cray = Camera.main.ScreenPointToRay (Input.mousePosition);
         foreach(Transform PlacementTile in placementGrid)
           PlacementTile.gameObject.GetComponent<Renderer>().enabled = true;
 
-        if(Physics.Raycast(cray,out hit,50f,placementGridLayer))
-        {
-          if(lastHitObj)
-          {
+        if(Physics.Raycast(cray,out hit,50f,placementGridLayer)) {
+          if(lastHitObj) {
             lastHitObj.GetComponent<Renderer>().material = originalMat;
           }
 
           lastHitObj = hit.collider.gameObject;
           originalMat = lastHitObj.GetComponent<Renderer>().material;
           lastHitObj.GetComponent<Renderer>().material = hoverMat;
-        }
-        else
-        {
-          if(lastHitObj)
-          {
+        } else {
+          if(lastHitObj) {
             lastHitObj.GetComponent<Renderer>().material = originalMat;
             lastHitObj = null;
           }
         }
 
-        if(Input.GetMouseButtonDown(0) && lastHitObj)
-        {
-          if(lastHitObj.tag == "placementTileVacant")
-          {
+        if(Input.GetMouseButtonDown(0) && lastHitObj) {
+          if(lastHitObj.tag == "placementTileVacant") {
             GameObject newStructure = (GameObject)Instantiate(structuresList[0],lastHitObj.transform.position,Quaternion.identity);
 
             newStructure.transform.localEulerAngles = new Vector3(0,Random.Range(0,360),0);
@@ -267,26 +246,22 @@ public class GUI_InGame : MonoBehaviour {
       }
     }
 
-    if(guiMode == "Paused")
-    {
-      if (GUI.Button (new Rect (Screen.width/2-100,Screen.height/2-20,200,35), "Resume Game")) 
-      {
+    if(guiMode == "Paused") {
+      if (GUI.Button (new Rect (Screen.width/2-100,Screen.height/2-20,200,35), "Resume Game")) {
         print ("Resuming game...");
 
         Time.timeScale = 1;
         guiMode = "InGame";
       }
 
-      if (GUI.Button (new Rect (Screen.width/2-100,Screen.height/2+20,200,35), "Quit")) 
-      {
+      if (GUI.Button (new Rect (Screen.width/2-100,Screen.height/2+20,200,35), "Quit")) {
         print ("Quiting...");
       }
 
     }
   }
 
-  public void EnemyKilled()
-  {
+  public void EnemyKilled() {
     killScore += 1;
   }
 }
