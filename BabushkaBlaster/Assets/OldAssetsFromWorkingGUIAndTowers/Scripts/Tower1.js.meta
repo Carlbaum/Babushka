@@ -1,0 +1,12 @@
+fileFormatVersion: 2
+guid: 36e2bce5fe2b2427f9893f95d5f36453
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - myProjectile: {fileID: 100000, guid: c0c4b9b03baaf400c881aee617c64b2a, type: 2}
+  - myTarget: {instanceID: 0}
+  - towerTurnPart: {instanceID: 0}
+  - barrelRot: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
