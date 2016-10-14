@@ -8,59 +8,84 @@ public class GenerateGrid : MonoBehaviour {
 	public int numColumns   = 17;
 	public int numRows      = 17;
 	public int startSquare  = -1;
-	public int targetSquare = -1;
+  public int targetSquare = -1;
 
-  public int[] obstacles;
+  public float damageAvoidanceFactor = 1;
+	public float distanceAvoidanceFactor = 1;
+
+//  public int[] obstacles;
 
   public Transform prefabTile;
   public Transform prefabObstacle;
+  public Transform prefabEnemy;
  
+  public Material matTileDefault;
   public Material matTileOccupied;
   public Material matTilePath;
   public Material matTileStart; 
   public Material matTileTarget;
 
+  public LayerMask placementGridLayer;
+
+  public bool isEnemiesMovingHorizontally;
+  public bool isUsingTowerPenalties;
+
 
 //----PRIVATE VARIABLES----
 	private int tileCount;
-  private bool isPathFound = false;
 
   private int[] movementCost = new int[2] {10, 14};
+  private List<int> towerTiles;
+  private List<int> closedList;
+  private List<int> openList;
+ 
+  private bool isPathFound = false;
 
-  List<int> closedList, openList;
-  Stack<Vector3> shortestPath;
+  private Vector3 defaultSpawnPosition;
 
+  private Stack<Vector3> shortestPath;
+
+
+//----FUNCTIONS----
   void CreateGrid () {
-
-    if (startSquare == -1) {  startSquare = numColumns/2 + 1 ; print("startSquare: " + startSquare + "\n"); }
-    if (targetSquare == -1) {  targetSquare = numRows * numColumns -( numColumns/2 ); print("targetSquare: " + targetSquare + "\n"); }
+    if (isEnemiesMovingHorizontally) {
+      // IF ENEMIES should go from left to right use these default start & target squares
+      if (startSquare == -1) { startSquare = (numRows / 2) * numColumns + 1; }
+      if (targetSquare == -1) { targetSquare = (numRows / 2 + 1) * numColumns; }
+    } else {
+      // IF ENEMIES should go from top to bottom use these default start & target squares
+      if (startSquare == -1) { startSquare = numColumns / 2 + 1; }
+      if (targetSquare == -1) { targetSquare = numRows * numColumns - (numColumns / 2); }
+    }
+//    print("Start and end tile indices: " + startSquare + " & " + targetSquare);
     // use offset to make sure the grid center is actually in the center of the grid
     float offsetX = -(numColumns-1) / 2.0f; // assumes width of tiles is =1
     float offsetY = (numRows-1) / 2.0f ; // assumes height of tiles is =1
-    int targetColumn = targetSquare % numColumns -1; // 1st row and column are both at index = 0
+
+    int targetColumn = (targetSquare - 1) % numColumns; // 1st row and column are both at index = 0
     int targetRow = (targetSquare - 1) / numColumns;
     float targetCoordinateX = targetColumn + offsetX;
     float targetCoordinateY = -targetRow + offsetY;
-    print("targetCoords: (" + targetCoordinateX + ", " + targetCoordinateY + ")\n");
-    print(targetCoordinateX + ", " + targetCoordinateY);
+//    print("targetCoords: (" + targetCoordinateX + ", " + targetCoordinateY + ")\ntarget column,row = (" + targetColumn + ", " + targetRow+ ")");
+//    print(targetCoordinateX + ", " + targetCoordinateY);
     for (int row = 0; row < numRows; row++) {
       for (int column = 0; column < numColumns; column++) {
         ++tileCount;
         float coordinateX = column + offsetX;
         float coordinateY = -row + offsetY;
-        Transform newGameObject = Instantiate(prefabTile, new Vector3(coordinateX, 0, coordinateY), Quaternion.Euler(new Vector3(90, 0, 0))) as Transform;
-        TileScript nGOScript = newGameObject.GetComponent<TileScript>();
+        Transform newTileObject = Instantiate(prefabTile, new Vector3(coordinateX, 0.01f, coordinateY), Quaternion.Euler(new Vector3(0, 0, 0))) as Transform;
+        newTileObject.gameObject.layer = LayerMask.NameToLayer("GridLayer");
+        newTileObject.Find("idText").GetComponent<TextMesh>().text = tileCount.ToString();
+        newTileObject.name = "Tile#" + tileCount;
+        //        newTileObject.GetComponent<Renderer>().material.SetColor("_Color", new Color(0.0f, 1.0f, 0.0f, 0.05f));
+        newTileObject.transform.parent = transform;
+        newTileObject.tag = "placementTileVacant";
 
-        newGameObject.Find("idText").GetComponent<TextMesh>().text = tileCount.ToString();
-        newGameObject.name = "Tile#" + tileCount;
-        newGameObject.GetComponent<Renderer>().material.SetColor("_Color", new Color(0.0f, 1.0f, 0.0f, 0.05f));
-        newGameObject.transform.parent = transform;
-
-        nGOScript.setTileID(tileCount);
-        nGOScript.setCoordinates();
-        nGOScript.setAccessible(true);
-        nGOScript.setHValue((int)(Mathf.Abs(coordinateX-targetCoordinateX)+Mathf.Abs(coordinateY-targetCoordinateY))*movementCost[0]);
-
+        TileScript newTileScript = newTileObject.GetComponent<TileScript>();
+        newTileScript.setTileID(tileCount);
+        newTileScript.setCoordinates();
+        newTileScript.setAccessible(true);
+        newTileScript.setHValue((int)(Mathf.Abs(coordinateX-targetCoordinateX)+Mathf.Abs(coordinateY-targetCoordinateY))*movementCost[0]);
         int northTileID = 0, eastTileID = 0, southTileID = 0, westTileID = 0;
         if (row > 0) {
           northTileID = tileCount - numColumns;
@@ -75,14 +100,22 @@ public class GenerateGrid : MonoBehaviour {
           westTileID = tileCount - 1;
         }
 
-        newGameObject.GetComponent<TileScript>().setAdjacent(new Vector4(northTileID,eastTileID,southTileID,westTileID));
+        newTileObject.GetComponent<TileScript>().setAdjacent(new Vector4(northTileID,eastTileID,southTileID,westTileID));
 
       }
     }
-    transform.Find ("Tile#" + startSquare).GetComponent<Renderer>().material.SetColor("_Color", new Color(0.0f, 1.0f, 0.0f, 0.2f));
+//    transform.Find ("Tile#" + startSquare).GetComponent<Renderer>().material.SetColor("_Color", new Color(0.0f, 1.0f, 0.0f, 0.99f));
+
+    Vector2 startTileCoordinates = transform.Find("Tile#" + startSquare).GetComponent<TileScript>().getCoordinates();
+    defaultSpawnPosition = new Vector3(startTileCoordinates.x, 0, startTileCoordinates.y);
+    if (isEnemiesMovingHorizontally) {
+      defaultSpawnPosition.x -= 2.0f; 
+    } else {
+      defaultSpawnPosition.z += 2.0f;
+    }
   }
 
-  bool checkAdjecentTiles(int currentTileID) {
+  bool CheckAdjecentTiles(int currentTileID) {
     Transform currentTileTransform = transform.Find ("Tile#" + currentTileID);
     TileScript currentTileScript = currentTileTransform.GetComponent<TileScript>();
     //if currentTile is next to a target
@@ -104,41 +137,47 @@ public class GenerateGrid : MonoBehaviour {
 
     bool[] freeTiles = new bool[4] { false, false, false, false }; // north, east, south, west
 
-    for (int i = 0; i < 2; i++) { // i=0 => north, east, south & west neighbours.. i=1 => diagonal neighbours
-      for (int j = 0; j < 4; j++) {
-        int tileIDToCheck = (int)adjacentTiles[i][j];
-        //TODO: squash these ifs into one.. but keep like this for now, for easier debug purposes
-        // check that there is a neighbour in the direction we are currently treating
-        if (tileIDToCheck > 0) { // NOTE: that the neighbour id is set to 0 if no neighbour is present
-          // check that the tile isn't in the closedList
-          if (!closedList.Contains(tileIDToCheck)) {
-            Transform tileToCheck = transform.Find("Tile#" + tileIDToCheck);
-            TileScript tileToCheckScript = tileToCheck.GetComponent<TileScript>();
-            if (tileToCheckScript.getAccessible()) {
-              freeTiles[j] = true;
-              int currentGValue = currentTileScript.getGValue();
-              int tileToCheckHValue = tileToCheckScript.getHValue();
-              int newGValue = movementCost[i] + currentGValue;
-              int newFValue = newGValue + tileToCheckHValue;
+    // Check horizontal and vertical neighbours
+    for (int j = 0; j < 4; j++) {
+      int tileIDToCheck = (int)adjacentTiles[0][j];
+      //TODO: squash these ifs into one.. but keep like this for now.. easier for debug purposes
+      // check that there is a neighbour in the direction we are currently treating
+      if (tileIDToCheck > 0) { // NOTE: that the neighbour id is set to 0 if no neighbour is present
+        // check that the tile isn't in the closedList
+        if (!closedList.Contains(tileIDToCheck)) {
+          Transform tileToCheck = transform.Find("Tile#" + tileIDToCheck);
+          TileScript tileToCheckScript = tileToCheck.GetComponent<TileScript>();
+          if (tileToCheckScript.getAccessible()) {
+            freeTiles[j] = true;
+            int currentGValue = currentTileScript.getGValue();
+            int tileToCheckHValue = tileToCheckScript.getHValue();
+            int newGValue = movementCost[0] + currentGValue;
+            int newTowerPenalty;
+            int newFValue = Mathf.RoundToInt(newGValue * distanceAvoidanceFactor) + tileToCheckHValue;
+            if (isUsingTowerPenalties) {
+              newTowerPenalty = Mathf.RoundToInt(CalculateTowerPenalties(tileToCheckScript.getCoordinates())*damageAvoidanceFactor);
+              tileToCheckScript.setTowerPenalty(newTowerPenalty+tileToCheckScript.getTowerPenalty());
+              newFValue += newTowerPenalty;
+            }
 
-              if (openList.Contains(tileIDToCheck)) {
-                if (tileToCheckScript.getFValue() > (newFValue)) {
-                  tileToCheckScript.setGValue(newGValue);
-                  tileToCheckScript.setParentNumber(currentTileID);
-                  tileToCheckScript.setFValue(newFValue);
-                }
-              } else {
-                openList.Add(tileIDToCheck);
+            if (openList.Contains(tileIDToCheck)) { 
+              if (tileToCheckScript.getFValue() > (newFValue)) { // TODO: squash these ifs into one.. if no need for an else is found 
                 tileToCheckScript.setGValue(newGValue);
                 tileToCheckScript.setParentNumber(currentTileID);
                 tileToCheckScript.setFValue(newFValue);
               }
+            } else {
+              openList.Add(tileIDToCheck);
+              tileToCheckScript.setGValue(newGValue);
+              tileToCheckScript.setParentNumber(currentTileID);
+              tileToCheckScript.setFValue(newFValue);
             }
           }
         }
       }
     }
-
+    // TODO: do these in the same loop as above?
+    // Check diagonal neighbours
     bool[] freeDiagonalTiles = new bool[4] { false, false, false, false }; // {NE, SE, SW, NW}
     if (freeTiles[0]) {
       if (freeTiles[1]) { freeDiagonalTiles[0] = true; } // north-east
@@ -150,16 +189,53 @@ public class GenerateGrid : MonoBehaviour {
       if (freeTiles[3]) { freeDiagonalTiles[2] = true; } // south-west
     }
 
+    for (int j = 0; j < 4; j++) { // j=0=>NE, j=1=>SE, j=2=>SW, j=3=>NW
+      int tileIDToCheck = (int)adjacentTiles[1][j];
+      //TODO: squash these ifs into one.. but keep like this for now, for easier debug purposes
+      // check that there is a neighbour in the direction we are currently treating
+      if (tileIDToCheck > 0 && freeDiagonalTiles[j]) { // NOTE: that the neighbour id is set to 0 if no neighbour is present
+        // check that the tile isn't in the closedList
+        if (!closedList.Contains(tileIDToCheck)) {
+          Transform tileToCheck = transform.Find("Tile#" + tileIDToCheck);
+          TileScript tileToCheckScript = tileToCheck.GetComponent<TileScript>();
+          if (tileToCheckScript.getAccessible()) {
+            int currentGValue = currentTileScript.getGValue();
+            int tileToCheckHValue = tileToCheckScript.getHValue();
+            int newGValue = movementCost[1] + currentGValue;
+            int newTowerPenalty;
+            int newFValue = Mathf.RoundToInt(newGValue * distanceAvoidanceFactor) + tileToCheckHValue;
+            if (isUsingTowerPenalties) {
+              newTowerPenalty = Mathf.RoundToInt(CalculateTowerPenalties(tileToCheckScript.getCoordinates())*damageAvoidanceFactor);
+              tileToCheckScript.setTowerPenalty(newTowerPenalty + tileToCheckScript.getTowerPenalty());
+              newFValue += newTowerPenalty;
+            }
+
+            if (openList.Contains(tileIDToCheck)) {
+              if (tileToCheckScript.getFValue() > (newFValue)) {
+                tileToCheckScript.setGValue(newGValue);
+                tileToCheckScript.setParentNumber(currentTileID);
+                tileToCheckScript.setFValue(newFValue);
+              }
+            } else {
+              openList.Add(tileIDToCheck);
+              tileToCheckScript.setGValue(newGValue);
+              tileToCheckScript.setParentNumber(currentTileID);
+              tileToCheckScript.setFValue(newFValue);
+            }
+          }
+        }
+      }
+    }
     return false;
   }
 
-  void findPath() {
-    print ("findPathStart");
+  void FindPath() {
+//    print ("FindPathStart");
     closedList = new List<int>();
     openList= new List<int>();
 
-    transform.Find ("Tile#" + startSquare).GetComponent<TileScript> ().setGValue(0);
-    isPathFound = checkAdjecentTiles(startSquare);
+    transform.Find("Tile#" + startSquare).GetComponent<TileScript>().setGValue(0);
+    isPathFound = CheckAdjecentTiles(startSquare);
 
 
     while (!isPathFound) {
@@ -174,7 +250,7 @@ public class GenerateGrid : MonoBehaviour {
         }
 
       }
-      isPathFound = checkAdjecentTiles(tileWithSmallestFValue);
+      isPathFound = CheckAdjecentTiles(tileWithSmallestFValue);
     }
 
     shortestPath = new Stack<Vector3>();
@@ -183,8 +259,8 @@ public class GenerateGrid : MonoBehaviour {
     int tempTileID = targetSquare;
     while(tempTileID != startSquare) {
       Transform tempTileTransform = transform.Find("Tile#" + tempTileID);
-      tempTileTransform.GetComponent<Renderer>().material.SetColor("_Color", new Color(0.0f, 1.0f, 0.0f, 0.2f));
-//      tempTileTransform.GetComponent<Renderer>().material = pathTileMat;
+//      tempTileTransform.GetComponent<Renderer>().material.SetColor("_Color", new Color(0.0f, 1.0f, 0.0f, 0.2f));
+      tempTileTransform.GetComponent<Renderer>().material = matTilePath;
       shortestPath.Push(tempTileTransform.position);
       tempTileID = tempTileTransform.GetComponent<TileScript>().getParentNumber();
     } 
@@ -194,20 +270,72 @@ public class GenerateGrid : MonoBehaviour {
 
     print(shortestPath.ToString());
 
-    print ("findPatchEnd");
+//    print ("findPathEnd");
 
+  }
+
+  float CalculateTowerPenalties(Vector2 tileCoordinates) {
+    float newTowerPenaltyCost = 0;
+    foreach (int i in towerTiles) {
+      TileScript towerTileScript = transform.Find("Tile#" + i).GetComponent<TileScript>();
+      float towerFireRadius = towerTileScript.getFireRadius();
+      Vector2 towerDirection = tileCoordinates - towerTileScript.getCoordinates();
+      float distanceToTower = towerDirection.magnitude;
+      float fireRadius = towerTileScript.getFireRadius();
+      if (distanceToTower < fireRadius) {
+        newTowerPenaltyCost += (fireRadius-distanceToTower) * towerTileScript.getAttackPower();
+      }
+    }
+    return newTowerPenaltyCost;
+  }
+
+  void ResetGrid() {
+    for (int i = 1; i <= tileCount ; i++ ) {
+      isPathFound = false;
+      Transform tileTransform = transform.Find ("Tile#" + i);
+      tileTransform.GetComponent<Renderer>().material = matTileDefault;
+
+      TileScript tileScript = tileTransform.GetComponent<TileScript>();
+      tileScript.setGValue(50000); // just set it to a very high number so it is guaranteed to be updated
+      tileScript.setFValue(60000); // just set it to a very high number so it is guaranteed to be updated
+    }
+  }
+
+  void spawnEnemy() {
+    Instantiate(prefabEnemy,defaultSpawnPosition,Quaternion.identity);
+  }
+
+  public bool GetIsPathFound() {
+    return isPathFound;
+  }
+
+  public Stack<Vector3> getShortestPath(){
+    return new Stack<Vector3>(shortestPath); // TODO: fix this UGLY solution
+  }
+
+  public void addTower(int tileId) {
+    print("Added a tower to tile #" + tileId);
+    towerTiles.Add(tileId);
   }
 
 	// Use this for initialization
 	void Start () {
     tileCount = 0;
     CreateGrid();
+    towerTiles = new List<int>();
 	}
 	
 	// Update is called once per frame
 	void Update () {
-    if (Input.GetKeyDown ("space") && !isPathFound) {
-      findPath();
+    if (Input.GetKeyDown ("space")) {
+      if (isPathFound) {
+        ResetGrid();
+      }
+      FindPath();
     }
-	}
+
+    if (Input.GetKeyDown ("return") && isPathFound) {
+      spawnEnemy();
+    }
+  }
 }
