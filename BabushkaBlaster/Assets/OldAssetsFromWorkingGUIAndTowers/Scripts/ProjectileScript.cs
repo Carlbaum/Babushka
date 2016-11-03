@@ -25,7 +25,7 @@ public class ProjectileScript : MonoBehaviour {
 	}
 	
 	public float GetSpeed () { return mySpeed; }
-  public float GetDamage () { return myDamage; print("attackPOWERint:" + (int)myDamage);}
+  public float GetDamage () { return myDamage; }
 
   public void SetSpeed (float speed) { mySpeed = speed; }
   public void SetDamage (float damage) { myDamage = damage; }

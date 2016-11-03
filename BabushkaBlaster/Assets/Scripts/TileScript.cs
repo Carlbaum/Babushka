@@ -29,7 +29,7 @@ public class TileScript : MonoBehaviour {
   public bool getAccessible() { return isAccessible; }
   public Vector2 getCoordinates(){ return coordinates; }
   public Vector4[] getAdjacentTilesNumber() {
-    return new Vector4[2]{new Vector4(northNeighbour,eastNeighbour,southNeighbour,westNeighbour), 
+    return new Vector4[2]{new Vector4(northNeighbour, eastNeighbour, southNeighbour, westNeighbour), 
       new Vector4(northEastNeighbour, southEastNeighbour, southWestNeighbour, northWestNeighbour)};
   }
   public float getFireRadius() { return towerScript.GetFireRadius(); }
@@ -42,8 +42,8 @@ public class TileScript : MonoBehaviour {
   public void setHValue( int newH ){ hValue = newH;
     transform.Find("hValueText").GetComponent<TextMesh>().text = hValue.ToString(); // TODO: COMPLETELY REMOVE THIS FROM PREFAB, ONLY FOR DEBUGGING
   }
-  public void setParentNumber(int newParentNumber ){ parentNumber = newParentNumber;
-//    transform.Find("parentText").GetComponent<TextMesh>().text = parentNumber.ToString();  // TODO: COMPLETELY REMOVE THIS FROM PREFAB, ONLY FOR DEBUGGING
+  public void setParentNumber(int newParentNumber) { parentNumber = newParentNumber;
+    transform.Find("parentText").GetComponent<TextMesh>().text = parentNumber.ToString();  // TODO: COMPLETELY REMOVE THIS FROM PREFAB, ONLY FOR DEBUGGING
   }
   public void setGValue( int newG ){ gValue = newG;
     transform.Find("gValueText").GetComponent<TextMesh>().text = gValue.ToString();  // TODO: COMPLETELY REMOVE THIS FROM PREFAB, ONLY FOR DEBUGGING
