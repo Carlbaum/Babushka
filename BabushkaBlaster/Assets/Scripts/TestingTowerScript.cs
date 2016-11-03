@@ -26,8 +26,8 @@ public class TestingTowerScript : MonoBehaviour {
   private Vector3 targetAnticipatedPos;
   private Vector3 targetDirection;
 	
-  float maxBarrelRot = -64.0f;
-  float minBarrelRot = 1.3f;
+//  float maxBarrelRot = -64.0f;
+//  float minBarrelRot = 1.3f;
   Quaternion desiredRotation;
   Quaternion desiredBarrelRot;
 	
@@ -39,12 +39,10 @@ public class TestingTowerScript : MonoBehaviour {
 		
 	}
 	
-	// Use this for initialization
 	void Start () {
 		
 	}
 	
-	// Update is called once per frame
 	void Update () {
 		if (myTarget) {	
 			if(Time.time >= nextMoveTime)	{
@@ -77,7 +75,6 @@ public class TestingTowerScript : MonoBehaviour {
 				FireProjectile();
 			}
 		}
-	
 	}
 	
 	void OnTriggerEnter (Collider collider) {
