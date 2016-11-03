@@ -8,9 +8,8 @@ public class EnemyScript : MonoBehaviour {
   private float startHP = 100;
   private float enemyHP = 100;
   private bool move = false;
-  private bool isAlmostThere = false; //TODO: do this neater 
   private GenerateGrid gridScript;
-  private Stack<Vector3> toGoTo;
+  private Stack<Vector3> checkpointPosition;
   private InGameGUI gameCTRL;
 
   // Health bar specific variables
@@ -20,10 +19,8 @@ public class EnemyScript : MonoBehaviour {
   private float barStart = -0.5f;
   private float barLength = 1.0f;
   private Vector3 barStartOffset;
-  private Vector3 barEndOffset;
+//  private Vector3 barEndOffset;
   private Vector3 barLengthOffset;
-
-//  int health;
 
 	Quaternion rotation;
 
@@ -49,9 +46,7 @@ public class EnemyScript : MonoBehaviour {
 
   public void EnemyDeath()  {
     Destroy(gameObject); 
-    //GameObject.FindGameObjectWithTag("GameController").GetComponent<GUI_InGame>().EnemyKilled();
     gameCTRL.EnemyKilled();
-//    Debug.Log ("Enemies Killed: ");
   }
 
 
@@ -68,54 +63,31 @@ public class EnemyScript : MonoBehaviour {
     greenLine.SetVertexCount(2);
     greenLine.SetColors(Color.red,Color.green);
 
-
-    //RedBar = gameObject.GetComponentInChildren<LineRenderer>();
-//    redLine = gameObject.AddComponent<LineRenderer>();
-//    redLine.material = new Material(Shader.Find("Toon/Basic Outline"));
-//    redLine.material.SetColor("_Color",Color.red);
-//    redLine.SetWidth(0.1f, 0.1f);
-//    redLine.SetVertexCount(2);
-//    redLine.SetColors(Color.red,Color.green);
-
     barStartOffset = new Vector3(barStart, 2f, 0f);
-    barEndOffset = new Vector3(1f, 2f, 0f);
-//    barLengthOffset = new Vector3(barLength, 2f, 0f);
 	}
 	
 	// Update is called once per frame
 	void Update () {
-//    LineRenderer redLine = GetComponent<LineRenderer>();
-//    redLine.SetPosition(0, gameObject.transform.position + barStartOffset);
-//    redLine.SetPosition(1, gameObject.transform.position + barEndOffset);
-
-//    LineRenderer lineRenderer = GetComponent<LineRenderer>();
     greenLine.SetPosition(0, gameObject.transform.position + barStartOffset);
     greenLine.SetPosition(1, gameObject.transform.position + new Vector3(barLength, 2f, 0f));
 
     if (move) {
-      if (!isAlmostThere && Vector3.Distance(transform.position, toGoTo.Peek()) < destinationDistance) {	
-        toGoTo.Pop();
-//        print(transform.name + " Go towards" + toGoTo.Peek() + ", count: " + toGoTo.Count);
-        if ( toGoTo.Count == 1) {
-          isAlmostThere = true;
-          turnSpeed *= 2;
-//          moveSpeed /= 2;
-        }
+      if (checkpointPosition.Count > 1 && Vector3.Distance(transform.position, checkpointPosition.Peek()) < destinationDistance) {	
+        checkpointPosition.Pop();
       }	
-      rotation = Quaternion.LookRotation(toGoTo.Peek() - transform.position);
+      rotation = Quaternion.LookRotation(checkpointPosition.Peek() - transform.position);
       transform.rotation = Quaternion.Slerp(transform.rotation, rotation, Time.deltaTime * turnSpeed);
-      //transform.LookAt(toGoTo.Peek());
       transform.Translate(Vector3.forward * moveSpeed * Time.deltaTime);
-      //transform.FindChild("Camera").LookAt(toGoTo.Peek());
-      if (isAlmostThere && Vector3.Distance(transform.position, toGoTo.Peek()) < 0.1) {
+      if (checkpointPosition.Count == 1 && Vector3.Distance(transform.position, checkpointPosition.Peek()) < 0.1) {
         Destroy(gameObject); 
+        gameCTRL.addPlayerHealth(-1);
       }
     } else if (gridScript.GetIsPathFound()) {
       move = true;
-      //TODO FIXthe toGoTo Stack.. right now the whole stack is being copied (and thus reversed) twice
-//      toGoTo = gridScript.getShortestPath();
-      toGoTo = new Stack<Vector3>(gridScript.getShortestPath());
-      rotation = Quaternion.LookRotation(toGoTo.Peek() - transform.position);
+      //TODO FIX the checkpointPosition Stack.. right now the whole stack is being copied (and thus reversed) twice
+//      checkpointPosition = gridScript.getShortestPath();
+      checkpointPosition = new Stack<Vector3>(gridScript.getShortestPath());
+      rotation = Quaternion.LookRotation(checkpointPosition.Peek() - transform.position);
 			
     }		
 	}
