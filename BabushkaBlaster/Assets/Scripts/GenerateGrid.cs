@@ -47,9 +47,10 @@ public class GenerateGrid : MonoBehaviour {
 
 
 //----FUNCTIONS----
+
   void CreateGrid () {
+    // IF ENEMIES should go from left to right use these default start & target squares
     if (isEnemiesMovingHorizontally) {
-      // IF ENEMIES should go from left to right use these default start & target squares
       if (startSquare == -1) { startSquare = (numRows / 2) * numColumns + 1; }
       if (targetSquare == -1) { targetSquare = (numRows / 2 + 1) * numColumns; }
     } else {
@@ -57,7 +58,6 @@ public class GenerateGrid : MonoBehaviour {
       if (startSquare == -1) { startSquare = numColumns / 2 + 1; }
       if (targetSquare == -1) { targetSquare = numRows * numColumns - (numColumns / 2); }
     }
-//    print("Start and end tile indices: " + startSquare + " & " + targetSquare);
     // use offset to make sure the grid center is actually in the center of the grid
     float offsetX = -(numColumns-1) / 2.0f; // assumes width of tiles is =1
     float offsetY = (numRows-1) / 2.0f ; // assumes height of tiles is =1
@@ -70,10 +70,10 @@ public class GenerateGrid : MonoBehaviour {
 //    print(targetCoordinateX + ", " + targetCoordinateY);
     for (int row = 0; row < numRows; row++) {
       for (int column = 0; column < numColumns; column++) {
-        ++tileCount;
         float coordinateX = column + offsetX;
         float coordinateY = -row + offsetY;
         Transform newTileObject = Instantiate(prefabTile, new Vector3(coordinateX, 0.01f, coordinateY), Quaternion.Euler(new Vector3(0, 0, 0))) as Transform;
+        ++tileCount;
         newTileObject.gameObject.layer = LayerMask.NameToLayer("GridLayer");
         newTileObject.Find("idText").GetComponent<TextMesh>().text = tileCount.ToString();
         newTileObject.name = "Tile#" + tileCount;
@@ -86,6 +86,9 @@ public class GenerateGrid : MonoBehaviour {
         newTileScript.setCoordinates();
         newTileScript.setAccessible(true);
         newTileScript.setHValue((int)(Mathf.Abs(coordinateX-targetCoordinateX)+Mathf.Abs(coordinateY-targetCoordinateY))*movementCost[0]);
+        newTileScript.setTowerPenalty(0);
+
+        // Neighbouring tile's IDs
         int northTileID = 0, eastTileID = 0, southTileID = 0, westTileID = 0;
         if (row > 0) {
           northTileID = tileCount - numColumns;
@@ -109,23 +112,20 @@ public class GenerateGrid : MonoBehaviour {
     Vector2 startTileCoordinates = transform.Find("Tile#" + startSquare).GetComponent<TileScript>().getCoordinates();
     defaultSpawnPosition = new Vector3(startTileCoordinates.x, 0, startTileCoordinates.y);
     if (isEnemiesMovingHorizontally) {
-      defaultSpawnPosition.x -= 2.0f; 
+      defaultSpawnPosition.x -= 5.0f; 
     } else {
-      defaultSpawnPosition.z += 2.0f;
+      defaultSpawnPosition.z += 5.0f;
     }
   }
 
   bool CheckAdjecentTiles(int currentTileID) {
-    Transform currentTileTransform = transform.Find ("Tile#" + currentTileID);
-    TileScript currentTileScript = currentTileTransform.GetComponent<TileScript>();
-    //if currentTile is next to a target
-    if(currentTileScript.getHValue() < 15) {
-      //print ("checkAdjacent:1 First IF");
-      transform.Find("Tile#" + (int)targetSquare).GetComponent<TileScript>().setParentNumber(currentTileID);
+    if (currentTileID == targetSquare) {
       return true;
     }
 
-    //print ("checkAdjacent:2 Start.. CHECKING NUMBER: " +currentTileID);
+    Transform currentTileTransform = transform.Find ("Tile#" + currentTileID);
+    TileScript currentTileScript = currentTileTransform.GetComponent<TileScript>();
+
     //adjacentTile will contain what tile# that is ( north, east, south and west ) of start tile. 0 means no tile in that direction
     Vector4[] adjacentTiles = currentTileTransform.GetComponent<TileScript>().getAdjacentTilesNumber();
 
@@ -142,7 +142,7 @@ public class GenerateGrid : MonoBehaviour {
       int tileIDToCheck = (int)adjacentTiles[0][j];
       //TODO: squash these ifs into one.. but keep like this for now.. easier for debug purposes
       // check that there is a neighbour in the direction we are currently treating
-      if (tileIDToCheck > 0) { // NOTE: that the neighbour id is set to 0 if no neighbour is present
+      if (tileIDToCheck > 0) { // NOTE: neighbour id is set to 0 if no neighbour is present
         // check that the tile isn't in the closedList
         if (!closedList.Contains(tileIDToCheck)) {
           Transform tileToCheck = transform.Find("Tile#" + tileIDToCheck);
@@ -152,32 +152,37 @@ public class GenerateGrid : MonoBehaviour {
             int currentGValue = currentTileScript.getGValue();
             int tileToCheckHValue = tileToCheckScript.getHValue();
             int newGValue = movementCost[0] + currentGValue;
-            int newTowerPenalty;
+            int newTowerPenalty = 0;
             int newFValue = Mathf.RoundToInt(newGValue * distanceAvoidanceFactor) + tileToCheckHValue;
             if (isUsingTowerPenalties) {
-              newTowerPenalty = Mathf.RoundToInt(CalculateTowerPenalties(tileToCheckScript.getCoordinates())*damageAvoidanceFactor);
-              tileToCheckScript.setTowerPenalty(newTowerPenalty+tileToCheckScript.getTowerPenalty());
+              newTowerPenalty = Mathf.RoundToInt(CalculateTowerPenalties(tileToCheckScript.getCoordinates())*damageAvoidanceFactor) + tileToCheckScript.getTowerPenalty();
               newFValue += newTowerPenalty;
             }
 
             if (openList.Contains(tileIDToCheck)) { 
-              if (tileToCheckScript.getFValue() > (newFValue)) { // TODO: squash these ifs into one.. if no need for an else is found 
+              if (tileToCheckScript.getFValue() > (newFValue)) {
                 tileToCheckScript.setGValue(newGValue);
                 tileToCheckScript.setParentNumber(currentTileID);
                 tileToCheckScript.setFValue(newFValue);
+                if (isUsingTowerPenalties) {
+                  tileToCheckScript.setTowerPenalty(newTowerPenalty);
+                }
               }
             } else {
               openList.Add(tileIDToCheck);
               tileToCheckScript.setGValue(newGValue);
               tileToCheckScript.setParentNumber(currentTileID);
               tileToCheckScript.setFValue(newFValue);
+              if (isUsingTowerPenalties) {
+                tileToCheckScript.setTowerPenalty(newTowerPenalty);
+              }
             }
           }
         }
       }
     }
-    // TODO: do these in the same loop as above?
     // Check diagonal neighbours
+    // TODO: do all of this in the same loop as above.. just add a nested for(int i = 0; i<2;i++)
     bool[] freeDiagonalTiles = new bool[4] { false, false, false, false }; // {NE, SE, SW, NW}
     if (freeTiles[0]) {
       if (freeTiles[1]) { freeDiagonalTiles[0] = true; } // north-east
@@ -193,7 +198,7 @@ public class GenerateGrid : MonoBehaviour {
       int tileIDToCheck = (int)adjacentTiles[1][j];
       //TODO: squash these ifs into one.. but keep like this for now, for easier debug purposes
       // check that there is a neighbour in the direction we are currently treating
-      if (tileIDToCheck > 0 && freeDiagonalTiles[j]) { // NOTE: that the neighbour id is set to 0 if no neighbour is present
+      if (tileIDToCheck > 0 && freeDiagonalTiles[j]) { // NOTE: neighbour id is set to 0 if no neighbour is present
         // check that the tile isn't in the closedList
         if (!closedList.Contains(tileIDToCheck)) {
           Transform tileToCheck = transform.Find("Tile#" + tileIDToCheck);
@@ -202,11 +207,10 @@ public class GenerateGrid : MonoBehaviour {
             int currentGValue = currentTileScript.getGValue();
             int tileToCheckHValue = tileToCheckScript.getHValue();
             int newGValue = movementCost[1] + currentGValue;
-            int newTowerPenalty;
+            int newTowerPenalty = 0;
             int newFValue = Mathf.RoundToInt(newGValue * distanceAvoidanceFactor) + tileToCheckHValue;
             if (isUsingTowerPenalties) {
-              newTowerPenalty = Mathf.RoundToInt(CalculateTowerPenalties(tileToCheckScript.getCoordinates())*damageAvoidanceFactor);
-              tileToCheckScript.setTowerPenalty(newTowerPenalty + tileToCheckScript.getTowerPenalty());
+              newTowerPenalty = Mathf.RoundToInt(CalculateTowerPenalties(tileToCheckScript.getCoordinates())*damageAvoidanceFactor) + tileToCheckScript.getTowerPenalty();
               newFValue += newTowerPenalty;
             }
 
@@ -215,12 +219,18 @@ public class GenerateGrid : MonoBehaviour {
                 tileToCheckScript.setGValue(newGValue);
                 tileToCheckScript.setParentNumber(currentTileID);
                 tileToCheckScript.setFValue(newFValue);
+                if (isUsingTowerPenalties) {
+                  tileToCheckScript.setTowerPenalty(newTowerPenalty);
+                }
               }
             } else {
               openList.Add(tileIDToCheck);
               tileToCheckScript.setGValue(newGValue);
               tileToCheckScript.setParentNumber(currentTileID);
               tileToCheckScript.setFValue(newFValue);
+              if (isUsingTowerPenalties) {
+                tileToCheckScript.setTowerPenalty(newTowerPenalty);
+              }
             }
           }
         }
@@ -229,8 +239,9 @@ public class GenerateGrid : MonoBehaviour {
     return false;
   }
 
+  // A* pathfinding
   void FindPath() {
-//    print ("FindPathStart");
+    print ("FindPathStart\n");
     closedList = new List<int>();
     openList= new List<int>();
 
@@ -255,9 +266,9 @@ public class GenerateGrid : MonoBehaviour {
 
     shortestPath = new Stack<Vector3>();
 
-
     int tempTileID = targetSquare;
     while(tempTileID != startSquare) {
+//      Debug.Log("ID: " + tempTileID);
       Transform tempTileTransform = transform.Find("Tile#" + tempTileID);
 //      tempTileTransform.GetComponent<Renderer>().material.SetColor("_Color", new Color(0.0f, 1.0f, 0.0f, 0.2f));
       tempTileTransform.GetComponent<Renderer>().material = matTilePath;
@@ -265,25 +276,17 @@ public class GenerateGrid : MonoBehaviour {
       tempTileID = tempTileTransform.GetComponent<TileScript>().getParentNumber();
     } 
     shortestPath.Push(transform.Find ("Tile#" + tempTileID).position);
-
-//    activateEnemy();
-
-    print(shortestPath.ToString());
-
-//    print ("findPathEnd");
-
   }
 
   float CalculateTowerPenalties(Vector2 tileCoordinates) {
     float newTowerPenaltyCost = 0;
     foreach (int i in towerTiles) {
       TileScript towerTileScript = transform.Find("Tile#" + i).GetComponent<TileScript>();
-      float towerFireRadius = towerTileScript.getFireRadius();
+      float towerFireRadius = towerTileScript.getFireRadius() + 2.5f; // add some xtra for enemy bounding box
       Vector2 towerDirection = tileCoordinates - towerTileScript.getCoordinates();
       float distanceToTower = towerDirection.magnitude;
-      float fireRadius = towerTileScript.getFireRadius();
-      if (distanceToTower < fireRadius) {
-        newTowerPenaltyCost += (fireRadius-distanceToTower) * towerTileScript.getAttackPower();
+      if (distanceToTower < towerFireRadius) {
+        newTowerPenaltyCost += (towerFireRadius-distanceToTower) * towerTileScript.getAttackPower();
       }
     }
     return newTowerPenaltyCost;
@@ -291,13 +294,14 @@ public class GenerateGrid : MonoBehaviour {
 
   void ResetGrid() {
     for (int i = 1; i <= tileCount ; i++ ) {
-      isPathFound = false;
       Transform tileTransform = transform.Find ("Tile#" + i);
       tileTransform.GetComponent<Renderer>().material = matTileDefault;
 
       TileScript tileScript = tileTransform.GetComponent<TileScript>();
-      tileScript.setGValue(50000); // just set it to a very high number so it is guaranteed to be updated
-      tileScript.setFValue(60000); // just set it to a very high number so it is guaranteed to be updated
+      tileScript.setGValue(99999); // just set it to a very high number so it is guaranteed to be updated
+      tileScript.setFValue(99999); // just set it to a very high number so it is guaranteed to be updated
+      tileScript.setTowerPenalty(0);
+      tileScript.setParentNumber(0);
     }
   }
 
@@ -310,11 +314,11 @@ public class GenerateGrid : MonoBehaviour {
   }
 
   public Stack<Vector3> getShortestPath(){
-    return new Stack<Vector3>(shortestPath); // TODO: fix this UGLY solution
+    return new Stack<Vector3>(shortestPath); // TODO: fix this UGLY ASS solution
   }
 
   public void addTower(int tileId) {
-    print("Added a tower to tile #" + tileId);
+//    print("Added a tower to tile #" + tileId);
     towerTiles.Add(tileId);
   }
 
@@ -329,6 +333,7 @@ public class GenerateGrid : MonoBehaviour {
 	void Update () {
     if (Input.GetKeyDown ("space")) {
       if (isPathFound) {
+        isPathFound = false;
         ResetGrid();
       }
       FindPath();
