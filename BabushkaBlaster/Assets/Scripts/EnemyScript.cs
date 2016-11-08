@@ -8,7 +8,7 @@ public class EnemyScript : MonoBehaviour {
   private float startHP = 100;
   private float enemyHP = 100;
   private bool move = false;
-  private GenerateGrid gridScript;
+  private GridHandler gridScript;
   private Stack<Vector3> checkpointPosition;
   private InGameGUI gameCTRL;
 
@@ -53,7 +53,7 @@ public class EnemyScript : MonoBehaviour {
   // PRIVATE FUNCTIONS
 	// Use this for initialization
 	void Start () {
-    gridScript = FindObjectOfType<GenerateGrid>();
+    gridScript = FindObjectOfType<GridHandler>();
     gameCTRL = GameObject.FindGameObjectWithTag("GameController").GetComponent<InGameGUI>();
 
     greenLine = gameObject.AddComponent<LineRenderer>();
