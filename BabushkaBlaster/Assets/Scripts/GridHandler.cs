@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class GenerateGrid : MonoBehaviour {
+public class GridHandler : MonoBehaviour {
 
 //----PUBLIC VARIABLES----
 	public int numColumns   = 17;
@@ -10,6 +10,7 @@ public class GenerateGrid : MonoBehaviour {
 	public int startSquare  = -1;
   public int targetSquare = -1;
 
+  //TODO: should be in enemy class
   public float damageAvoidanceFactor = 1;
 	public float distanceAvoidanceFactor = 1;
 

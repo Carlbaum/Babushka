@@ -96,7 +96,7 @@ public class InGameGUI : MonoBehaviour {
             lastHitScript.setTower(structuresList[0]);
             lastHitScript.setAccessible(false);
             lastHitObj.tag = "placementTileOccupied";
-            placementGrid.GetComponent<GenerateGrid>().addTower(lastHitScript.getTileID());
+            placementGrid.GetComponent<GridHandler>().addTower(lastHitScript.getTileID());
             buildMode = false;
           }
         }
