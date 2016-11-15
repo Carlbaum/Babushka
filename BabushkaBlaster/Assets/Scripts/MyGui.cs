@@ -1,19 +1,16 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class InGameGUI : MonoBehaviour {
+public class MyGui : MonoBehaviour {
   //PRIVATE VARIABLES
-  private static string guiMode = "InGame";
-  private enum gameState { Running, Paused, GameOver, Victorious};
-  private gameState state = gameState.Running;
-
+  private gameState state;
+  private GameController gameCTRL;
 
   private static bool buildMode = false;
-
-  private static int selectedTower;
-  private static int playerHealth = 9;
-  private static int killScore = 0;
-  private static int cash = 1337;
+  private static int playerHealth;
+  private static int killScore;
+  private static int cash;
+  private static int enemiesOnTheBoard;
 
   private Material originalMat;
 
@@ -30,86 +27,45 @@ public class InGameGUI : MonoBehaviour {
 
   public GameObject[] structuresList;
 
-  public float cameraSpeed = 10.0f;
-  public float cameraRotSpeed = 50.0f;
-
   void Awake() {
 
   }
 
   void Start() {
     camera = FindObjectOfType<Camera>();
+    gameCTRL = FindObjectOfType<GameController>();
+    state = gameCTRL.state;
   }
 
   void Update() {
-    switch (state) {
-      case gameState.Running:
-        if(Input.GetKeyUp(KeyCode.B)) {
-          print("PRESSED b-key");
-          buildMode = buildMode ? false : true;
-        }
-        if(Input.GetKeyDown("escape")) {
-          print("PRESSED escape-key, PAUSE");
-          Time.timeScale = 0;
-          state = gameState.Paused;
-        }
-        if (Input.GetKey(KeyCode.RightArrow)) {
-          if (Input.GetKey(KeyCode.LeftAlt)) {
-            camera.transform.Rotate(Vector3.up * cameraRotSpeed * Time.deltaTime, Space.World);
-          } else {
-            camera.transform.Translate(Vector3.right * cameraSpeed * Time.deltaTime, Space.World);
-          }
-        }
-        if (Input.GetKey(KeyCode.LeftArrow)) {
-          if (Input.GetKey(KeyCode.LeftAlt)) {
-            camera.transform.Rotate(Vector3.down * cameraRotSpeed * Time.deltaTime, Space.World);
-          } else {
-            camera.transform.Translate(Vector3.left * cameraSpeed * Time.deltaTime, Space.World);
-          }
-        }
-        if (Input.GetKey(KeyCode.DownArrow)) {
-          if (Input.GetKey(KeyCode.LeftAlt)) {
-            camera.transform.Translate(Vector3.back * cameraSpeed * Time.deltaTime);
-          } else {
-            camera.transform.Translate(Vector3.back * cameraSpeed * Time.deltaTime, Space.World);
-          }
-        }
-        if (Input.GetKey(KeyCode.UpArrow)) {
-          if (Input.GetKey(KeyCode.LeftAlt)) {
-            camera.transform.Translate(Vector3.forward * cameraSpeed * Time.deltaTime);
-          } else {
-            camera.transform.Translate(Vector3.forward * cameraSpeed * Time.deltaTime, Space.World);
-          }
-        }
-        break;
-      case gameState.Paused:
-        if (Input.GetKeyDown("escape")) {
-          //        print ("Resuming game...");
-          Time.timeScale = 1;
-          state = gameState.Running;
-        }
-        break;
-      case gameState.GameOver:
-        break;
-      case gameState.Victorious:
-        break;
-      default:
-        break;
-    }
+    state = gameCTRL.state;
+//    switch (state) {
+//      case gameState.Running:
+//        break;
+//      case gameState.Paused:
+//        break;
+//      case gameState.GameOver:
+//        break;
+//      case gameState.Victorious:
+//        break;
+//      default:
+//        break;
+//    }
 
 
 
   }
 
-  public int toolbarInt = 0;
-  public string[] toolbarStrings = new string[] {"Toolbar1", "Toolbar2", "Toolbar3"};
+//  public int toolbarInt = 0;
+//  public string[] toolbarStrings = new string[] {"Toolbar1", "Toolbar2", "Toolbar3"};
 
   void OnGUI() {
     
     switch (state) {
       case gameState.Running:
-        GUI.TextField(new Rect(5, 5, 100, 40), "Lives left: " + playerHealth);
-        GUI.TextField(new Rect(Screen.width - 105, 5, 100, 40), "Score: " + killScore);
+        GUI.Label(new Rect(Screen.width/2-60, 5, 120, 40), "Enemies left: " + enemiesOnTheBoard);
+        GUI.Label(new Rect(5, 5, 100, 40), "Lives left: " + playerHealth);
+        GUI.Label(new Rect(Screen.width - 105, 5, 100, 40), "Score: " + killScore);
         GUI.Label(new Rect(Screen.width - 105, Screen.height - 20, 200, 30), "Money: " + cash);
 
         if (buildMode == false) {
@@ -181,13 +137,23 @@ public class InGameGUI : MonoBehaviour {
     cash = money;
   }
 
-
-
-  public void EnemyKilled() {
-    killScore++;
+  public void setScore(int score) {
+    killScore = score;
   }
 
-  public void addToPlayerHealth(int hp) {
-    playerHealth += hp;
+  public void setEnemiesLeft(int numberOfEnemies) {
+    enemiesOnTheBoard = numberOfEnemies;
   }
+
+  public void addToEnemiesLeft(int term) {
+    enemiesOnTheBoard += term;
+  }
+
+//  public void EnemyKilled() {
+//    killScore++;
+//  }
+
+//  public void addPlayerHealth(int hp) {
+//    playerHealth += hp;
+//  }
 }

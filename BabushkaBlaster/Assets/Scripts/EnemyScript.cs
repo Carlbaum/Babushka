@@ -46,7 +46,7 @@ public class EnemyScript : MonoBehaviour {
 
   public void EnemyDeath()  {
     Destroy(gameObject); 
-    gameCTRL.EnemyKilled();
+//    gameCTRL.EnemyKilled();
   }
 
 
@@ -80,7 +80,7 @@ public class EnemyScript : MonoBehaviour {
       transform.Translate(Vector3.forward * moveSpeed * Time.deltaTime);
       if (checkpointPosition.Count == 1 && Vector3.Distance(transform.position, checkpointPosition.Peek()) < 0.1) {
         Destroy(gameObject); 
-        gameCTRL.addPlayerHealth(-1);
+        gameCTRL.addToPlayerHealth(-1);
       }
     } else if (gridScript.GetIsPathFound()) {
       move = true;
