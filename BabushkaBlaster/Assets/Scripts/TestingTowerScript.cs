@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class TestingTowerScript : MonoBehaviour {
 	
@@ -11,36 +12,39 @@ public class TestingTowerScript : MonoBehaviour {
   public Transform aimHorizontal;
   public Transform aimVertical;
 	
+
   public float turnSpeed = 10.0f;
   public float reloadTime = 0.7f;
   public float firePauseTime = 0.2f;
-	
-  private float	nextFireTime;
+  
+  private float nextFireTime;
   private float nextMoveTime;
   private float projectileSpeed = ProjectileScript.mySpeed;
   private float targetSpeed;
   private float targetDistance;
   private float aimError;
-  private float errorAmount = 0.5f;
-	
+  private float errorAmount = 0.25f;
+  
   private Vector3 targetAnticipatedPos;
   private Vector3 targetDirection;
-	
+  
 //  float maxBarrelRot = -64.0f;
 //  float minBarrelRot = 1.3f;
   Quaternion desiredRotation;
   Quaternion desiredBarrelRot;
-	
-	public GameObject myProjectile;
-	
-	private GameObject myTargetObj;
+  
+  public GameObject myProjectile;
+  
+  private GameObject myTargetObj;
+  private Stack<Enemy> enemyStack;
 	
 	void Awake () {
 		
 	}
 	
 	void Start () {
-		
+    enemyStack = new Stack<GameObject>();
+//    enemyStack = new Stack<Enemy>();
 	}
 	
 	void Update () {
@@ -50,11 +54,11 @@ public class TestingTowerScript : MonoBehaviour {
 				
 				targetDirection = myTarget.forward;
 				
-				targetAnticipatedPos = myTarget.position+targetDirection*targetSpeed/projectileSpeed;
-				targetDistance = Vector3.Distance(aimHorizontal.position,targetAnticipatedPos);
-				Vector3 aimPoint = targetAnticipatedPos+targetDirection*targetSpeed*targetDistance/projectileSpeed;
+				targetAnticipatedPos = myTarget.position + targetDirection * targetSpeed / projectileSpeed;
+				targetDistance = Vector3.Distance( aimHorizontal.position, targetAnticipatedPos);
+				Vector3 aimPoint = targetAnticipatedPos + targetDirection * targetSpeed * targetDistance / projectileSpeed;
 				
-        Vector3 temp = aimPoint + new Vector3(aimError, aimError, aimError);
+        Vector3 temp = aimPoint + new Vector3(aimError, 0, aimError);
 				aimHorizontal.LookAt(temp);
 				aimHorizontal.eulerAngles = new Vector3(0, aimHorizontal.eulerAngles.y, 0);
 				aimVertical.LookAt(temp);
@@ -64,7 +68,7 @@ public class TestingTowerScript : MonoBehaviour {
 				aimHorizontal.LookAt(projectileSpawnPoint);
 				aimHorizontal.eulerAngles = new Vector3(0, aimHorizontal.eulerAngles.y, 0);
 				
-				barrel.rotation = Quaternion.Slerp(barrel.rotation , aimVertical.rotation , Time.deltaTime*turnSpeed);
+				barrel.rotation = Quaternion.Slerp(barrel.rotation , aimVertical.rotation , Time.deltaTime * turnSpeed);
 				
 				if(barrel.eulerAngles.x < -64.0f) {
 					barrel.transform.Rotate(-64.0f,0f,0f);
@@ -73,17 +77,20 @@ public class TestingTowerScript : MonoBehaviour {
 			
 			if(Time.time >= nextFireTime) {
 				FireProjectile();
+        nextFireTime = Time.time+(reloadTime*0.5f);
+
 			}
-		}
+    } else if (enemyStack.Count > 0) {
+      enemyStack.Pop();
+      myTargetObj = myTargetObj = collider.gameObject;
+      myTarget = myTargetObj.transform;
+      targetSpeed = myTarget.GetComponent<Enemy>().getSpeedVector();
+    }
 	}
 	
 	void OnTriggerEnter (Collider collider) {
 		if(collider.gameObject.tag == "Enemy") {
-			
-			nextFireTime = Time.time+(reloadTime*0.5f);
-			myTargetObj = collider.gameObject;
-			myTarget = myTargetObj.transform;
-      targetSpeed = myTarget.GetComponent<EnemyScript>().getSpeed();
+      enemyStack.Push(collider.gameObject);
 //			Debug.Log("Aquired new target: " + myTarget.name + "\nSpeed: " + targetSpeed);
 		}
 	}

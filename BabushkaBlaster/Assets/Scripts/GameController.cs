@@ -9,7 +9,7 @@ public enum towerTypes { Standard, AreaDamage };
 public class GameController : MonoBehaviour {
   //PRIVATE VARIABLES
 
-  private static bool buildMode = false; // TODO: enumerator? GameState?
+  public bool buildMode = false; // TODO: enumerator? GameState?
 
 
   private Camera camera;
@@ -31,13 +31,15 @@ public class GameController : MonoBehaviour {
   public int enemiesOnTheBoard = 0;
   public int cash = 1337;
 
-  public Transform grid;
-  public LayerMask gridLayer;
+//  public Transform grid;
+//  public LayerMask gridLayer;
 
   public float cameraSpeed = 10.0f;
   public float cameraRotSpeed = 50.0f;
 
   public Enemy[] EnemyType;
+
+  public GridHandlerNew gridHandler;
 
 
   // ---------FUNCTIONS----------
@@ -45,6 +47,7 @@ public class GameController : MonoBehaviour {
   void Start() {
     camera = FindObjectOfType<Camera>();
     gui = FindObjectOfType<MyGui>();
+    gridHandler = FindObjectOfType<GridHandlerNew>();
     state = gameState.Running;
     enemies = new List<Enemy>();
     gui.setMoney(cash);
@@ -61,14 +64,22 @@ public class GameController : MonoBehaviour {
           GameOver();
         }
         runningStateKeyEvents();
-        enemyHandler.handleBoids(ref enemies);
-       
+        if (enemiesOnTheBoard > 0) {
+          enemyHandler.handleBoids(ref enemies);
+        }
         break;
+        if (Input.GetKeyDown ("space")) {
+          if (gridHandler.isPathFound) {
+            gridHandler.isPathFound = false;
+            gridHandler.ResetGrid();
+          }
+          gridHandler.FindPath();
+        }
       case gameState.Paused:
         if (Input.GetKeyDown("escape")) {
           print ("Resuming game...");
           Time.timeScale = 1;
-          state = gameState.Running;
+          changeState(gameState.Running);
         }
         break;
       case gameState.GameOver:
@@ -108,7 +119,7 @@ public class GameController : MonoBehaviour {
 
   public void GameOver() {
     print("You Lose!");
-    state = gameState.GameOver;
+    changeState(gameState.GameOver);
   }
 
   private void runningStateKeyEvents() {
@@ -128,18 +139,18 @@ public class GameController : MonoBehaviour {
     }
     if (Input.GetKeyUp(KeyCode.B)) {
       print("PLACE TOWER");
-      buildMode = buildMode ? false : true;
+      changeBuildMode();
     }
     if (Input.GetKeyDown("escape")) {
       print("PAUSE GAME");
       print("");
       Time.timeScale = 0;
-      state = gameState.Paused;
+      changeState(gameState.Paused);
     }
     if (Input.GetKeyDown("return")) {
-      enemyHandler.spawnEnemies(7, enemyTypes.Protector, ref enemies);
-      enemyHandler.spawnEnemies(3, enemyTypes.Chicken, ref enemies);
-      enemiesOnTheBoard += 10;
+      enemyHandler.spawnEnemies(5, enemyTypes.Protector, ref enemies);
+      enemyHandler.spawnEnemies(1, enemyTypes.Chicken, ref enemies);
+      enemiesOnTheBoard += 6;
       gui.setEnemiesLeft(enemiesOnTheBoard);
       //          spawnEnemies(7, enemyTypes.Chicken);
       //          gui.setPlayerHealth();
@@ -172,5 +183,16 @@ public class GameController : MonoBehaviour {
         camera.transform.Translate(Vector3.forward * cameraSpeed * Time.deltaTime, Space.World);
       }
     }
+  }
+
+  public void changeBuildMode() {
+    buildMode = buildMode ? false : true;
+    gui.buildMode = buildMode;
+    gui.setGridVisibility(buildMode);
+  }
+
+  public void changeState(gameState newState) {
+    state = newState;
+    gui.state = state;
   }
 }

@@ -40,7 +40,7 @@ public class GridHandlerNew : MonoBehaviour {
   private List<int> closedList;
   private List<int> openList;
  
-  private bool isPathFound = false;
+  public bool isPathFound = false;
 
   private Vector3 defaultSpawnPosition;
 
@@ -241,7 +241,7 @@ public class GridHandlerNew : MonoBehaviour {
   }
 
   // A* pathfinding
-  void FindPath() {
+  public void FindPath() {
     print ("FindPathStart\n");
     closedList = new List<int>();
     openList= new List<int>();
@@ -293,7 +293,7 @@ public class GridHandlerNew : MonoBehaviour {
     return newTowerPenaltyCost;
   }
 
-  void ResetGrid() {
+  public void ResetGrid() {
     for (int i = 1; i <= tileCount ; i++ ) {
       Transform tileTransform = transform.Find ("Tile#" + i);
       tileTransform.GetComponent<Renderer>().material = matTileDefault;
@@ -325,20 +325,14 @@ public class GridHandlerNew : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-//    tileCount = 0;
-//    CreateGrid();
-//    towerTiles = new List<int>();
+    tileCount = 0;
+    CreateGrid();
+    towerTiles = new List<int>();
 	}
 	
 	// Update is called once per frame
 	void Update () {
-//    if (Input.GetKeyDown ("space")) {
-//      if (isPathFound) {
-//        isPathFound = false;
-//        ResetGrid();
-//      }
-//      FindPath();
-//    }
+
 //
 //    if (Input.GetKeyDown ("return") && isPathFound) {
 //      spawnEnemy();

@@ -3,10 +3,10 @@ using System.Collections;
 
 public class MyGui : MonoBehaviour {
   //PRIVATE VARIABLES
-  private gameState state;
+  public gameState state;
   private GameController gameCTRL;
 
-  private static bool buildMode = false;
+  public bool buildMode = false;
   private static int playerHealth;
   private static int killScore;
   private static int cash;
@@ -35,10 +35,11 @@ public class MyGui : MonoBehaviour {
     camera = FindObjectOfType<Camera>();
     gameCTRL = FindObjectOfType<GameController>();
     state = gameCTRL.state;
+    buildMode = gameCTRL.buildMode;
   }
 
   void Update() {
-    state = gameCTRL.state;
+//    state = gameCTRL.state;
 //    switch (state) {
 //      case gameState.Running:
 //        break;
@@ -59,6 +60,8 @@ public class MyGui : MonoBehaviour {
 //  public int toolbarInt = 0;
 //  public string[] toolbarStrings = new string[] {"Toolbar1", "Toolbar2", "Toolbar3"};
 
+
+
   void OnGUI() {
     
     switch (state) {
@@ -68,19 +71,12 @@ public class MyGui : MonoBehaviour {
         GUI.Label(new Rect(Screen.width - 105, 5, 100, 40), "Score: " + killScore);
         GUI.Label(new Rect(Screen.width - 105, Screen.height - 20, 200, 30), "Money: " + cash);
 
-        if (buildMode == false) {
-          foreach (Transform PlacementTile in placementGrid) {
-            PlacementTile.GetComponent<Renderer>().enabled = false;
-          }
-
+        if (!buildMode) {
           if (GUI.Button(new Rect(5, Screen.height - 45, 40, 40), "build")) {
-            buildMode = true;
+            gameCTRL.changeBuildMode();
           }
         } else { // buildMode == true
           ray = camera.ScreenPointToRay(Input.mousePosition);
-          foreach (Transform PlacementTile in placementGrid) {
-            PlacementTile.GetComponent<Renderer>().enabled = true;
-          }
 
           if (Physics.Raycast(ray, out rayHit, 50f, placementGridLayer)) {
             if (lastHitObj) {
@@ -105,7 +101,7 @@ public class MyGui : MonoBehaviour {
               lastHitScript.setAccessible(false);
               lastHitObj.tag = "placementTileOccupied";
               placementGrid.GetComponent<GridHandler>().addTower(lastHitScript.getTileID());
-              buildMode = false;
+              gameCTRL.changeBuildMode();
             }
           }
         }
@@ -114,7 +110,7 @@ public class MyGui : MonoBehaviour {
         if (GUI.Button(new Rect(Screen.width / 2 - 100, Screen.height / 2 - 20, 200, 35), "Resume Game")) {
           //        print ("Resuming game...");
           Time.timeScale = 1;
-          state = gameState.Running;
+          gameCTRL.changeState(gameState.Running);
         }
         if (GUI.Button (new Rect (Screen.width/2-100,Screen.height/2+20,200,35), "Quit")) {
           //        print ("Quiting...");
@@ -156,4 +152,9 @@ public class MyGui : MonoBehaviour {
 //  public void addPlayerHealth(int hp) {
 //    playerHealth += hp;
 //  }
+  public void setGridVisibility(bool b) {
+    foreach (Transform PlacementTile in placementGrid) {
+      PlacementTile.GetComponent<Renderer>().enabled = buildMode;
+    }
+  }
 }

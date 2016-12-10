@@ -4,12 +4,13 @@ using System.Collections.Generic;
 
 public abstract class Enemy : MonoBehaviour {
 	
-  public float maxSpeed         = 3.0f;
+  public float maxSpeed         = 1.5f;
   public float currentSpeed     = 2.0f;
   public float maxTurnSpeed     = 30.0f;
   public float currentTurnSpeed = 20.0f;
   public float startingHP       = 100;
   public float currentHP        = 100;
+  public Vector3 velocityVector;
   public Quaternion rotation;
   public GameController gameCTRL;
   public List<Enemy> enemies;
@@ -47,6 +48,10 @@ public abstract class Enemy : MonoBehaviour {
 
   public void EnemyReachedTarget() {
     gameCTRL.EnemyReachedTarget(gameObject);
+  }
+
+  public Vector3 getSpeedVector() {
+    return velocityVector;
   }
 
 //  string ToString() {
