@@ -76,6 +76,9 @@ public class MyGui : MonoBehaviour {
             gameCTRL.changeBuildMode();
           }
         } else { // buildMode == true
+          if (GUI.Button(new Rect(5, Screen.height - 45, 40, 40), "X")) {
+            gameCTRL.changeBuildMode();
+          }
           ray = camera.ScreenPointToRay(Input.mousePosition);
 
           if (Physics.Raycast(ray, out rayHit, 50f, placementGridLayer)) {
@@ -154,7 +157,7 @@ public class MyGui : MonoBehaviour {
 //  }
   public void setGridVisibility(bool b) {
     foreach (Transform PlacementTile in placementGrid) {
-      PlacementTile.GetComponent<Renderer>().enabled = buildMode;
+      PlacementTile.GetComponent<Renderer>().enabled = b;
     }
   }
 }

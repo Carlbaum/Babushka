@@ -54,6 +54,7 @@ public class GameController : MonoBehaviour {
     gui.setScore(killScore);
     gui.setPlayerHealth(playerHealth);
     gui.setEnemiesLeft(enemiesOnTheBoard);
+    gui.setGridVisibility(false);
   }
 
   void Update() {
@@ -67,7 +68,6 @@ public class GameController : MonoBehaviour {
         if (enemiesOnTheBoard > 0) {
           enemyHandler.handleBoids(ref enemies);
         }
-        break;
         if (Input.GetKeyDown ("space")) {
           if (gridHandler.isPathFound) {
             gridHandler.isPathFound = false;
@@ -75,6 +75,7 @@ public class GameController : MonoBehaviour {
           }
           gridHandler.FindPath();
         }
+        break;
       case gameState.Paused:
         if (Input.GetKeyDown("escape")) {
           print ("Resuming game...");

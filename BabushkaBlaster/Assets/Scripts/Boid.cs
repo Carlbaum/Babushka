@@ -36,28 +36,28 @@ public class Boid : Enemy {
     gameCTRL = FindObjectOfType<GameController>();
     gridHandler = FindObjectOfType<GridHandlerNew>();
     checkpoints = new Stack<Vector3>();
-    /*checkpoints.Push(new Vector3( 8, 0, 0));
-    checkpoints.Push(new Vector3( 7, 0, 0));
-    checkpoints.Push(new Vector3( 6, 0, 0));
-    checkpoints.Push(new Vector3( 5, 0,-1));
-    checkpoints.Push(new Vector3( 4, 0,-2));
-    checkpoints.Push(new Vector3( 3, 0,-3));
-    checkpoints.Push(new Vector3( 2, 0,-4));
-    checkpoints.Push(new Vector3( 2, 0,-3));
-    checkpoints.Push(new Vector3( 2, 0,-2));
-    checkpoints.Push(new Vector3( 1, 0,-1));
-    checkpoints.Push(new Vector3( 0, 0, 0));
-    checkpoints.Push(new Vector3( 0, 0, 1));
-    checkpoints.Push(new Vector3( 0, 0, 2));
-    checkpoints.Push(new Vector3(-1, 0, 2));
-    checkpoints.Push(new Vector3(-2, 0, 3));
-    checkpoints.Push(new Vector3(-3, 0, 3));
-    checkpoints.Push(new Vector3(-4, 0, 4));
-    checkpoints.Push(new Vector3(-5, 0, 3));
-    checkpoints.Push(new Vector3(-6, 0, 2));
-    checkpoints.Push(new Vector3(-7, 0, 1));
-    checkpoints.Push(new Vector3(-8, 0, 0));
-*/
+//    checkpoints.Push(new Vector3( 8, 0, 0));
+//    checkpoints.Push(new Vector3( 7, 0, 0));
+//    checkpoints.Push(new Vector3( 6, 0, 0));
+//    checkpoints.Push(new Vector3( 5, 0,-1));
+//    checkpoints.Push(new Vector3( 4, 0,-2));
+//    checkpoints.Push(new Vector3( 3, 0,-3));
+//    checkpoints.Push(new Vector3( 2, 0,-4));
+//    checkpoints.Push(new Vector3( 2, 0,-3));
+//    checkpoints.Push(new Vector3( 2, 0,-2));
+//    checkpoints.Push(new Vector3( 1, 0,-1));
+//    checkpoints.Push(new Vector3( 0, 0, 0));
+//    checkpoints.Push(new Vector3( 0, 0, 1));
+//    checkpoints.Push(new Vector3( 0, 0, 2));
+//    checkpoints.Push(new Vector3(-1, 0, 2));
+//    checkpoints.Push(new Vector3(-2, 0, 3));
+//    checkpoints.Push(new Vector3(-3, 0, 3));
+//    checkpoints.Push(new Vector3(-4, 0, 4));
+//    checkpoints.Push(new Vector3(-5, 0, 3));
+//    checkpoints.Push(new Vector3(-6, 0, 2));
+//    checkpoints.Push(new Vector3(-7, 0, 1));
+//    checkpoints.Push(new Vector3(-8, 0, 0));
+
     velocityVector = new Vector3(0,0,0);
     pathVector = new Vector3(0,0,0);
 
@@ -69,10 +69,12 @@ public class Boid : Enemy {
 
   void Update () {
     if (move) {
-      if (checkpoints.Count > 1 && Vector3.Distance(transform.position, checkpoints.Peek()) < 0.4f) {  
-        checkpoints.Pop();
-      } else if (checkpoints.Count == 1) {
-        cohesionWeight = avoidanceWeight = alignmentWeight = 0;
+      if (Vector3.Distance(transform.position, checkpoints.Peek()) < 0.4f) {  
+        if (checkpoints.Count > 1) {
+          checkpoints.Pop();
+        } else /*if (checkpoints.Count == 1)*/ {
+          cohesionWeight = avoidanceWeight = alignmentWeight = 0;
+        }
       }
 
       float weightsSum = pathWeight + cohesionWeight + avoidanceWeight + alignmentWeight;
@@ -101,8 +103,9 @@ public class Boid : Enemy {
   //    Vector3 lookAtPoint = checkpoints.Peek() - transform.position + boidVector * boidWeight;
   //    rotation = Quaternion.LookRotation(velocityVector);
   //    transform.rotation = Quaternion.Slerp(transform.rotation, rotation, Time.deltaTime * currentTurnSpeed);
-      transform.Translate(velocityVector * Time.deltaTime);
-  //    transform.Translate(transform.forward * velocityVector.magnitude * Time.deltaTime);
+      transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(velocityVector), Time.deltaTime * currentTurnSpeed);
+//      transform.Translate(velocityVector * Time.deltaTime, Space.World);
+      transform.Translate(transform.forward * velocityVector.magnitude * Time.deltaTime, Space.World);
   //    transform.Translate(Vector3.forward * currentSpeed * Time.deltaTime);
       if (checkpoints.Count == 1 && Vector3.Distance(transform.position, checkpoints.Peek()) < 0.2) {
         EnemyReachedTarget();

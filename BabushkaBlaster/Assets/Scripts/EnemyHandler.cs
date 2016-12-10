@@ -66,14 +66,14 @@ public class EnemyHandler : MonoBehaviour {
 
             // avoidance
             if (relativeDistance < boid.avoidanceDistance) {
-            boid.avoidanceVector += -relativePosition.normalized * 1 * Mathf.Exp(-Mathf.Pow(boid.avoidanceDistance - relativeDistance,2.0f)/0.08f);
+            boid.avoidanceVector += -relativePosition.normalized * 2.0f * Mathf.Exp(-Mathf.Pow(boid.avoidanceDistance - relativeDistance,2.0f)/0.08f);
 
 //              boid.avoidanceVector += -relativePosition.normalized * (boid.avoidanceDistance - relativeDistance);
               neighbourCount++;
-            }// else {
+            } else {
               boid.averagePosition += relativePosition;
               cohesionCount++;
-            //}
+            }
           }
         }
       } 

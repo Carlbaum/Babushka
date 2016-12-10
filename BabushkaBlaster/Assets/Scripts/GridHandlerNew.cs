@@ -79,6 +79,8 @@ public class GridHandlerNew : MonoBehaviour {
         newTileObject.Find("idText").GetComponent<TextMesh>().text = tileCount.ToString();
         newTileObject.name = "Tile#" + tileCount;
         //        newTileObject.GetComponent<Renderer>().material.SetColor("_Color", new Color(0.0f, 1.0f, 0.0f, 0.05f));
+        newTileObject.GetComponent<Renderer>().enabled = false;
+
         newTileObject.transform.parent = transform;
         newTileObject.tag = "placementTileVacant";
 
