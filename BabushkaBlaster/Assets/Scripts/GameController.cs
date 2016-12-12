@@ -97,13 +97,16 @@ public class GameController : MonoBehaviour {
     cash += 10;
     gui.setMoney(cash);
     gui.setScore(killScore);
-    gui.setEnemiesLeft(--enemiesOnTheBoard);
+//    gui.addToEnemiesLeft(-1);
+    --enemiesOnTheBoard;
     enemies.Remove(killedEnemy.GetComponentInParent<Enemy>());
     Destroy(killedEnemy); 
   }
 
   public void EnemyReachedTarget(GameObject missedEnemy) {
-    gui.setEnemiesLeft(--enemiesOnTheBoard);
+//    gui.addToEnemiesLeft(-1);
+    --enemiesOnTheBoard;
+    playerHealth--;
     enemies.Remove(missedEnemy.GetComponentInParent<Enemy>());
     Destroy(missedEnemy); 
   }
@@ -115,7 +118,7 @@ public class GameController : MonoBehaviour {
 
   public void addToEnemiesOnTheBoard(int term) {
     enemiesOnTheBoard += term;
-    gui.setEnemiesLeft(enemiesOnTheBoard);
+//    gui.addToEnemiesLeft(term);
   }
 
   public void GameOver() {
@@ -134,8 +137,16 @@ public class GameController : MonoBehaviour {
       print("Add BOID");
       print("enemies length pre: " + enemies.Count);
       enemyHandler.spawnEnemies(1, enemyTypes.Chicken, ref enemies);
-      enemiesOnTheBoard += 1;
-      gui.setEnemiesLeft(enemiesOnTheBoard);
+      enemiesOnTheBoard++;
+      //      gui.addToEnemiesLeft(1);
+      print("enemies length post: " + enemies.Count);
+    }
+    if (Input.GetKeyUp(KeyCode.H)) {
+      print("Add BOID");
+      print("enemies length pre: " + enemies.Count);
+      enemyHandler.spawnEnemies(1, enemyTypes.Protector, ref enemies);
+      enemiesOnTheBoard++;
+      //      gui.addToEnemiesLeft(1);
       print("enemies length post: " + enemies.Count);
     }
     if (Input.GetKeyUp(KeyCode.B)) {
@@ -152,7 +163,7 @@ public class GameController : MonoBehaviour {
       enemyHandler.spawnEnemies(5, enemyTypes.Protector, ref enemies);
       enemyHandler.spawnEnemies(1, enemyTypes.Chicken, ref enemies);
       enemiesOnTheBoard += 6;
-      gui.setEnemiesLeft(enemiesOnTheBoard);
+//      gui.addToEnemiesLeft(6);
       //          spawnEnemies(7, enemyTypes.Chicken);
       //          gui.setPlayerHealth();
     }

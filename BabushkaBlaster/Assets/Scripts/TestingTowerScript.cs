@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class TestingTowerScript : MonoBehaviour {
 	
@@ -17,12 +18,12 @@ public class TestingTowerScript : MonoBehaviour {
 	
   private float	nextFireTime;
   private float nextMoveTime;
-  private float projectileSpeed = ProjectileScript.mySpeed;
+  private float projectileSpeed;// = ProjectileScript.mySpeed;
   private float targetSpeed;
   private float targetDistance;
-  private float aimError;
-  private float errorAmount = 0.25f;
-	
+  private float errorAmount = 0.2f;
+  
+  private Vector3 aimError;
   private Vector3 targetAnticipatedPos;
   private Vector3 targetDirection;
 	
@@ -34,65 +35,103 @@ public class TestingTowerScript : MonoBehaviour {
 	public GameObject myProjectile;
 	
 	private GameObject myTargetObj;
+//  public Stack<GameObject> enemyStack;
+  public List<GameObject> enemyList;
 	
 	void Awake () {
 		
 	}
 	
 	void Start () {
-		
+    enemyList = new List<GameObject>();
+//    enemyStack = new Stack<GameObject>();
+    projectileSpeed = myProjectile.GetComponent<ProjectileScript>().GetSpeed();
 	}
 	
 	void Update () {
-		if (myTarget) {	
-			if(Time.time >= nextMoveTime)	{
-				//CalculateAimPosition(myTarget);
-				
-				targetDirection = myTarget.forward;
-				
-				targetAnticipatedPos = myTarget.position+targetDirection*targetSpeed/projectileSpeed;
-				targetDistance = Vector3.Distance(aimHorizontal.position,targetAnticipatedPos);
-				Vector3 aimPoint = targetAnticipatedPos+targetDirection*targetSpeed*targetDistance/projectileSpeed;
-				
-        Vector3 temp = aimPoint + new Vector3(aimError, aimError, aimError);
-				aimHorizontal.LookAt(temp);
-				aimHorizontal.eulerAngles = new Vector3(0, aimHorizontal.eulerAngles.y, 0);
-				aimVertical.LookAt(temp);
-				
-				towerTurnPart.rotation = Quaternion.Slerp(towerTurnPart.rotation, aimHorizontal.rotation, Time.deltaTime*turnSpeed);
-				
-				aimHorizontal.LookAt(projectileSpawnPoint);
-				aimHorizontal.eulerAngles = new Vector3(0, aimHorizontal.eulerAngles.y, 0);
-				
-				barrel.rotation = Quaternion.Slerp(barrel.rotation , aimVertical.rotation , Time.deltaTime*turnSpeed);
-				
-				if(barrel.eulerAngles.x < -64.0f) {
-					barrel.transform.Rotate(-64.0f,0f,0f);
-				}
-			}
+    if (enemyList.Count > 0) {
+//      Debug.Log("List contains " + enemyList.Count + " elements!");
+      if (enemyList[0]) {
+//        Debug.Log("VALID!");
+        if(Time.time >= nextMoveTime) {
+          //CalculateAimPosition(myTarget);
+          myTarget =  enemyList[0].transform;
+          targetSpeed = myTarget.GetComponent<Boid>().getSpeed();
+          targetDirection = myTarget.forward;
+
+          Vector3 scaledDirectionVec = targetDirection * targetSpeed / projectileSpeed;
+          targetAnticipatedPos = myTarget.position + scaledDirectionVec;
+          targetDistance = Vector3.Distance(aimHorizontal.position, targetAnticipatedPos);
+          Vector3 aimPoint = targetAnticipatedPos + scaledDirectionVec * targetDistance;
+//          Vector3 horizontalDirection = (((myTarget.position - aimHorizontal.position) / Time.deltaTime + targetSpeed * targetDirection) /projectileSpeed).normalized;
+//          Vector3 aimPoint = aimHorizontal.position + horizontalDirection * projectileSpeed;
+
+          Vector3 temp = aimPoint + aimError;
+          aimHorizontal.LookAt(temp);
+          aimHorizontal.eulerAngles = new Vector3(0, aimHorizontal.eulerAngles.y, 0);
+          aimVertical.LookAt(temp);
+
+          towerTurnPart.rotation = Quaternion.Slerp(towerTurnPart.rotation, aimHorizontal.rotation, Time.deltaTime*turnSpeed);
+
+          aimHorizontal.LookAt(projectileSpawnPoint);
+          aimHorizontal.eulerAngles = new Vector3(0, aimHorizontal.eulerAngles.y, 0);
+
+          barrel.rotation = Quaternion.Slerp(barrel.rotation , aimVertical.rotation , Time.deltaTime*turnSpeed);
+
+          if(barrel.eulerAngles.x < -64.0f) {
+            barrel.transform.Rotate(-64.0f, 0f, 0f);
+          } else if (barrel.eulerAngles.x > 4.5f) {
+//            barrel.transform.Rotate(4.5f, 0f, 0f);
+          }
+        }
+
+        if(Time.time >= nextFireTime) {
+          FireProjectile();
+        }      
+      } else {
+//        Debug.Log("NON-VALID!");
+        enemyList.RemoveAt(0);
+      }
+    }
+//    if (false){//myTarget) {	
 			
-			if(Time.time >= nextFireTime) {
-				FireProjectile();
-			}
-		}
+//		}
 	}
 	
 	void OnTriggerEnter (Collider collider) {
-		if(collider.gameObject.tag == "Enemy") {
-			
-			nextFireTime = Time.time+(reloadTime*0.5f);
-			myTargetObj = collider.gameObject;
-			myTarget = myTargetObj.transform;
-      targetSpeed = myTarget.GetComponent<EnemyScript>().getSpeed();
-//			Debug.Log("Aquired new target: " + myTarget.name + "\nSpeed: " + targetSpeed);
+//    nextFireTime = Time.time+(reloadTime*0.5f);
+    if(collider.gameObject.tag == "Enemy") {
+      myTargetObj = collider.gameObject;
+      myTarget = myTargetObj.transform;
+//      Debug.Log("Aquired new target: " + myTarget.name );
+//      enemyStack.Push(collider.gameObject);
+      if (myTargetObj.GetComponent<Boid>().avoidanceDistance == 0.25) {
+        int i = 0;
+        while (i < enemyList.Count && enemyList[i] && enemyList[i].GetComponent<Boid>().avoidanceDistance == 0.25) {
+          i++;
+        }
+        enemyList.Insert(i,collider.gameObject);
+      } else {
+        enemyList.Add(collider.gameObject);
+      }
+
+//			myTargetObj = collider.gameObject;
+//			myTarget = myTargetObj.transform;
+//      targetSpeed = myTarget.GetComponent<EnemyScript>().getSpeed();
+////			Debug.Log("Aquired new target: " + myTarget.name + "\nSpeed: " + targetSpeed);
 		}
 	}
 	
 	void OnTriggerExit (Collider collider) {
-		if(collider.gameObject.transform == myTarget) {
-			myTarget = null;
+    int idx = enemyList.IndexOf(collider.gameObject);
+    if (idx != -1) {
+//      Debug.Log("Found object at index " + idx + ", removing it!");
+      enemyList.RemoveAt(idx);
+    }
+//		if(collider.gameObject.transform == myTarget) {
+//			myTarget = null;
 //			Debug.Log("**Danger**\nLost track of target!!");
-		}
+//		}
 	}
 	
 	/*void CalculateAimPosition (Vector3 targetPos) {
@@ -106,7 +145,9 @@ public class TestingTowerScript : MonoBehaviour {
 	}*/
 	
 	private void CalculateAimError() {
-		aimError = Random.Range(-errorAmount, errorAmount);
+    aimError.x = Random.Range(-errorAmount, errorAmount);
+    aimError.y = Random.Range(-errorAmount, errorAmount);
+    aimError.z = Random.Range(-errorAmount, errorAmount);
 	}
 	
 	void FireProjectile () {

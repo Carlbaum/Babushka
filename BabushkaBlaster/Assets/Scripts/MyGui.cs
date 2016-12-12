@@ -39,6 +39,8 @@ public class MyGui : MonoBehaviour {
   }
 
   void Update() {
+    enemiesOnTheBoard = gameCTRL.enemiesOnTheBoard;
+    playerHealth = gameCTRL.playerHealth;
 //    state = gameCTRL.state;
 //    switch (state) {
 //      case gameState.Running:
@@ -103,7 +105,7 @@ public class MyGui : MonoBehaviour {
               lastHitScript.setTower(structuresList[0]);
               lastHitScript.setAccessible(false);
               lastHitObj.tag = "placementTileOccupied";
-              placementGrid.GetComponent<GridHandler>().addTower(lastHitScript.getTileID());
+              placementGrid.GetComponent<GridHandlerNew>().addTower(lastHitScript.getTileID());
               gameCTRL.changeBuildMode();
             }
           }

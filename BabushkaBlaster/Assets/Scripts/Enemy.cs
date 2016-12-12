@@ -54,6 +54,10 @@ public abstract class Enemy : MonoBehaviour {
     return velocityVector;
   }
 
+  public float getSpeed() {
+    return velocityVector.magnitude;
+  }
+
 //  string ToString() {
 //    return "jahaja";
 //  }
